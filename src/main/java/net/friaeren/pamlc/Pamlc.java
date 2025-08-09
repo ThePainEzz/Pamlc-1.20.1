@@ -10,7 +10,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,31 +49,48 @@ public class Pamlc implements ModInitializer {
     }
 
     private void checkPlayers(MinecraftServer server) {
-        for (Integer i : levels.keySet()){
-            // testing shit on god
-            Identifier advancementId = new Identifier("pamlc", "level_" + i); // template: ...new Identifier("nomemod","path/nomeachivement")
-            Advancement advancement = server.getAdvancementLoader().get(advancementId); //carica l'achievement da client a server
 
-            System.out.println("[Pamlc] Tick..."); //print ogni volta che finisce il counter dei tick
+        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) { // loop per ogni player nel server
 
-            if (advancement == null) { //catch se non trova l'achievement
-                System.err.println("[Pamlc] Advancement not found: " + advancementId);
-            }
+            for (Integer i : levels.keySet().stream().sorted().toList()) {
+                // testing shit on god
+                Identifier advancementId = new Identifier("pamlc", "level_" + i); // template: ...new Identifier("nomemod","path/nomeachivement")
+                Advancement advancement = server.getAdvancementLoader().get(advancementId); //carica l'achievement da client a server
 
-            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) { // loop per ogni player nel server
+                //System.out.println("[Pamlc] Checking level " + i + " for " + player.getName().getString());
+
+                //if (advancement == null) { //catch se non trova l'achievement
+                //    System.err.println("[Pamlc] Advancement not found: " + advancementId);
+                //    continue;
+                //}
+
+
                 boolean hasAdvancement = player.getAdvancementTracker().getProgress(advancement).isDone(); //check se ha l'achievement
 
-                    if (!hasAdvancement) { // se non lo ha
-                        // Run pufferfish command :D
-                        int levelreset = i; //boh volevo fare un print nel server figo
-                        String command = String.format( //reset exp
-                                "puffish_skills experience get %s puffish_skills:prom",
-                                player.getName().getString()
-                        );
-                        int currentExp = getExp(server, command);
-                        logger.log(Level.INFO, "XP del player: " + currentExp);
+                String command = String.format( //reset exp
+                        "puffish_skills experience get %s puffish_skills:prom",
+                        player.getName().getString()
+                );
 
-                    System.out.println("[Pamlc] Reset " + player.getName().getString() + "'s skill XP to level " + levelreset); // print per i log del server
+                int currentExp = getExp(server, command);
+                if (!hasAdvancement && currentExp>levels.get(i)) { // se non lo ha
+                    // Run pufferfish command :D
+
+                    //logger.log(Level.INFO, "XP del player: " + currentExp);
+
+                    String resetCommand = String.format(
+                            "puffish_skills experience set %s puffish_skills:prom %d",
+                            player.getName().getString(), levels.get(i)
+                    );
+
+                    server.getCommandManager().executeWithPrefix(
+                            player.getCommandSource().withLevel(4).withSilent(), // op admin level
+                            resetCommand
+                    );
+
+                    System.out.println("[Pamlc] Reset " + player.getName().getString() + "'s skill XP to level " + i); // print per i log del server
+
+                    break;
                 }
             }
         }
