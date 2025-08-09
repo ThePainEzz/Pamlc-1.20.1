@@ -2,20 +2,28 @@ package net.friaeren.pamlc;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.friaeren.pamlc.util.CommandOutputCatcher;
 import net.minecraft.advancement.Advancement;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Pamlc implements ModInitializer {
 
     private int tickCounter = 0;
     private HashMap<Integer, Integer> levels;
+    private Logger logger;
 
     @Override
     public void onInitialize() {
         System.out.println("[Pamlc] Hey we are working here... maybe...");
+        logger = Logger.getLogger(this.getClass().getName());
 
         levels = new HashMap<Integer, Integer>();
         levels.put(10, 1235);
@@ -32,7 +40,6 @@ public class Pamlc implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             tickCounter++;
 
-
             // 20 ticks = 1 second, so 2400 ticks = 120 seconds
             if (tickCounter >= 15*20) { // ho messo 15 sec per testare in game rq
                 tickCounter = 0;
@@ -44,38 +51,39 @@ public class Pamlc implements ModInitializer {
     private void checkPlayers(MinecraftServer server) {
         for (Integer i : levels.keySet()){
             // testing shit on god
-            Identifier advancementId = new Identifier("prominent", "level_" + i); // template: ...new Identifier("nomemod","path/nomeachivement")
-            // advancementIdAlt = new Identifier("bosses_of_mass_destruction", "adventure/night_lich_defeat"); // same thing as above
+            Identifier advancementId = new Identifier("pamlc", "level_" + i); // template: ...new Identifier("nomemod","path/nomeachivement")
             Advancement advancement = server.getAdvancementLoader().get(advancementId); //carica l'achievement da client a server
-            //Advancement advancementAlt = server.getAdvancementLoader().get(advancementIdAlt); //same, ho messo anche l'alt per il livello 10 perché nelle quest ci sta
 
             System.out.println("[Pamlc] Tick..."); //print ogni volta che finisce il counter dei tick
 
             if (advancement == null) { //catch se non trova l'achievement
                 System.err.println("[Pamlc] Advancement not found: " + advancementId);
-                return;
             }
 
             for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) { // loop per ogni player nel server
                 boolean hasAdvancement = player.getAdvancementTracker().getProgress(advancement).isDone(); //check se ha l'achievement
 
-                if (!hasAdvancement) { // se non lo ha
-                    // Run pufferfish command :D
-                    int levelreset = 0; //boh volevo fare un print nel server figo
-
-                    String command = String.format( //reset exp
-                            "puffish_skills experience set %s prom 1235", // !!! DA SOSTITUIRE "mining" CON LA CATEGORIA DELLE SKIL DELLA PROMINENCE (dovrebbe essere prom qualcosa, cercatela)
-                            player.getName().getString()
-                    );
-                    // Run command on server, admin
-                    server.getCommandManager().executeWithPrefix(
-                            player.getCommandSource().withLevel(4), // Level 4 = operator
-                            command
-                    );
+                    if (!hasAdvancement) { // se non lo ha
+                        // Run pufferfish command :D
+                        int levelreset = i; //boh volevo fare un print nel server figo
+                        String command = String.format( //reset exp
+                                "puffish_skills experience get %s puffish_skills:prom",
+                                player.getName().getString()
+                        );
+                        int currentExp = getExp(server, command);
+                        logger.log(Level.INFO, "XP del player: " + currentExp);
 
                     System.out.println("[Pamlc] Reset " + player.getName().getString() + "'s skill XP to level " + levelreset); // print per i log del server
                 }
             }
         }
+    }
+
+    private int getExp(MinecraftServer server, String command) {
+        String out = CommandOutputCatcher.executeAndCapture(server, command);
+        logger.log(Level.INFO, out);
+        // TODO: manipolare la stringa in modo da ottenere l'exp
+        String[] parts = out.split(" ");
+        return Integer.parseInt(parts[parts.length-4]);
     }
 }
