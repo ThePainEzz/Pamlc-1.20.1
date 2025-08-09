@@ -40,7 +40,7 @@ public class Pamlc implements ModInitializer {
             tickCounter++;
 
             // 20 ticks = 1 second, so 2400 ticks = 120 seconds
-            if (tickCounter >= 15*20) { // ho messo 15 sec per testare in game rq
+            if (tickCounter >= 2400) { // ho messo 15 sec per testare in game rq
                 tickCounter = 0;
                 checkPlayers(server);
             }
