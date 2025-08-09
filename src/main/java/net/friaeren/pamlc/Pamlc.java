@@ -84,6 +84,6 @@ public class Pamlc implements ModInitializer {
         logger.log(Level.INFO, out);
         // TODO: manipolare la stringa in modo da ottenere l'exp
         String[] parts = out.split(" ");
-        return Integer.parseInt(parts[parts.length-4]);
+        return Integer.parseInt(parts[parts.length-5]);
     }
 }
