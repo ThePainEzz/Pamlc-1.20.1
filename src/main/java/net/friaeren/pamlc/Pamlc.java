@@ -18,12 +18,11 @@ public class Pamlc implements ModInitializer {
 
     private int tickCounter = 0;
     private HashMap<Integer, Integer> levels;
-    private Logger logger;
+
 
     @Override
     public void onInitialize() {
         System.out.println("[Pamlc] Hey we are working here... maybe...");
-        logger = Logger.getLogger(this.getClass().getName());
 
         levels = new HashMap<Integer, Integer>();
         levels.put(10, 1235);
@@ -98,7 +97,6 @@ public class Pamlc implements ModInitializer {
 
     private int getExp(MinecraftServer server, String command) {
         String out = CommandOutputCatcher.executeAndCapture(server, command);
-        logger.log(Level.INFO, out);
         // TODO: manipolare la stringa in modo da ottenere l'exp
         String[] parts = out.split(" ");
         return Integer.parseInt(parts[parts.length-5]);

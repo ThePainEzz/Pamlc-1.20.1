@@ -49,7 +49,7 @@ public class CommandOutputCatcher {
         );
 
         // Eseguiamo il comando
-        server.getCommandManager().executeWithPrefix(source, command);
+        server.getCommandManager().executeWithPrefix(source.withSilent(), command);
 
         // Ritorniamo tutto unito in una sola stringa
         return String.join("\n", outputLines);
